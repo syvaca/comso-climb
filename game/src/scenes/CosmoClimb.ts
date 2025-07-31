@@ -241,28 +241,13 @@ export class CosmoClimbScene extends Container {
 
     // Set up device orientation handling based on device type
     if (this.isMobileDevice()) {
+      console.log('Mobile device detected');
       if (this.hasDeviceOrientationSupport()) {
-        if (this.isMobileWithPermissionPrompt()) {
-          // iOS 13+ device that requires permission - handled in overlay
-          console.log('Mobile device detected with permission requirement');
-          // Don't add event listeners here - wait for permission
-        } else {
-          // Mobile device without permission requirement (Android, older iOS)
-          console.log('Mobile device detected without permission requirement');
-          try {
-            window.addEventListener('deviceorientation', this.handleTilt);
-            window.addEventListener('orientationchange', this.handleDeviceOrientationChange);
-            this.tiltPermissionGranted = true;
-          } catch (error) {
-            console.error('Failed to add device orientation listeners:', error);
-          }
-        }
+        console.log('Device orientation API available');
       } else {
-        // Mobile device without device orientation support
-        console.log('Mobile device detected without device orientation support');
+        console.log('Device orientation API not available');
       }
     } else {
-      // Desktop device - no device orientation needed
       console.log('Desktop device detected');
     }
     
@@ -678,19 +663,17 @@ export class CosmoClimbScene extends Container {
   }
 
   private isMobileWithPermissionPrompt(): boolean {
-    // Check if we're on a mobile device
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // Only check for iOS devices that actually need permission
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     
     // Check if device orientation API is available
     const hasDeviceOrientation = typeof DeviceOrientationEvent !== 'undefined';
     
-    // Check if permission is required (iOS 13+)
-    const requiresPermission = typeof (DeviceOrientationEvent as any).requestPermission === 'function';
+    // Check if permission API exists (iOS 13+)
+    const hasPermissionAPI = typeof (DeviceOrientationEvent as any).requestPermission === 'function';
     
-    // Only return true if we're on iOS and the permission API exists
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    
-    return isMobile && hasDeviceOrientation && requiresPermission && isIOS;
+    // Only return true for iOS devices with permission API
+    return isIOS && hasDeviceOrientation && hasPermissionAPI;
   }
 
   private isMobileDevice(): boolean {
@@ -714,11 +697,7 @@ export class CosmoClimbScene extends Container {
     let instructionText = 'Tap to Start';
     if (this.isMobileDevice()) {
       if (this.hasDeviceOrientationSupport()) {
-        if (this.isMobileWithPermissionPrompt()) {
-          instructionText = 'Tap to Start\n(Tilt to control)';
-        } else {
-          instructionText = 'Tap to Start\n(Tilt to control)';
-        }
+        instructionText = 'Tap to Start\n(Tilt to control)';
       } else {
         instructionText = 'Tap to Start\n(Use keyboard: A/D or Arrow Keys)';
       }
@@ -737,55 +716,61 @@ export class CosmoClimbScene extends Container {
     this.startOverlay.eventMode = 'static';
     this.startOverlay.hitArea = new Rectangle(0, 0, this.app.renderer.width, this.app.renderer.height);
     this.startOverlay.on('pointerdown', (_event: any) => {
-      // Request permissions directly in the user gesture handler
+      this.handleStartGame();
+    });    
+    this.addChild(this.startOverlay);
+  }
+
+  private async handleStartGame() {
+    // Try to enable tilt controls if available
+    if (this.isMobileDevice() && this.hasDeviceOrientationSupport()) {
+      await this.enableTiltControls();
+    }
+    
+    // Start the game regardless of tilt status
+    this.startGame();
+  }
+
+  private async enableTiltControls(): Promise<void> {
+    try {
+      // Check if we need permission (iOS 13+)
       if (this.isMobileWithPermissionPrompt()) {
-        // iOS 13+ device that requires permission
-        console.log('Requesting device orientation permission...');
+        console.log('Attempting to request device orientation permission...');
         
-        // Check if we're in a secure context (required for device orientation)
+        // Check for secure context
         if (!window.isSecureContext) {
           console.warn('Device orientation requires HTTPS');
-          this.showPermissionDeniedPopup('Device orientation requires HTTPS connection');
           return;
         }
         
-        try {
-          (DeviceOrientationEvent as any).requestPermission().then((permissionState: string) => {
-            console.log(`Permission result: ${permissionState}`);
-            if (permissionState === 'granted') {
-              window.addEventListener('deviceorientation', this.handleTilt);
-              window.addEventListener('orientationchange', this.handleDeviceOrientationChange);
-              this.tiltPermissionGranted = true;
-              console.log('Device orientation permission granted');
-              this.startGame();
-            } else {
-              console.log('Device orientation permission denied');
-              this.showPermissionDeniedPopup(`Permission denied: ${permissionState}`);
-            }
-          }).catch((err: any) => {
-            console.error('Permission request error:', err);
-            this.showPermissionDeniedPopup(`Permission error: ${err}`);
-          });
-        } catch (error) {
-          console.error('Failed to request permission:', error);
-          this.showPermissionDeniedPopup('Failed to request device orientation permission');
+        // Request permission
+        const permissionState = await (DeviceOrientationEvent as any).requestPermission();
+        console.log(`Permission result: ${permissionState}`);
+        
+        if (permissionState === 'granted') {
+          this.setupTiltControls();
+          console.log('Device orientation permission granted');
+        } else {
+          console.log('Device orientation permission denied');
         }
       } else {
-        // Non-iOS device or older iOS - no permission needed
-        if (this.isMobileDevice() && this.hasDeviceOrientationSupport()) {
-          try {
-            window.addEventListener('deviceorientation', this.handleTilt);
-            window.addEventListener('orientationchange', this.handleDeviceOrientationChange);
-            this.tiltPermissionGranted = true;
-            console.log('Device orientation enabled without permission requirement');
-          } catch (error) {
-            console.error('Failed to add device orientation listeners:', error);
-          }
-        }
-        this.startGame();
+        // No permission needed (Android, older iOS)
+        this.setupTiltControls();
+        console.log('Device orientation enabled without permission requirement');
       }
-    });    
-    this.addChild(this.startOverlay);
+    } catch (error) {
+      console.error('Failed to enable tilt controls:', error);
+    }
+  }
+
+  private setupTiltControls() {
+    try {
+      window.addEventListener('deviceorientation', this.handleTilt);
+      window.addEventListener('orientationchange', this.handleDeviceOrientationChange);
+      this.tiltPermissionGranted = true;
+    } catch (error) {
+      console.error('Failed to setup tilt controls:', error);
+    }
   }
 
   private showPermissionDeniedPopup(message?: string) {
