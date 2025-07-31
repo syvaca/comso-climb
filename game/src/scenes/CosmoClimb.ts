@@ -22,6 +22,18 @@ interface DeviceOrientationEventiOS extends DeviceOrientationEvent {
   requestPermission?: () => Promise<'granted' | 'denied'>;
 }
 
+/**
+ * CosmoClimbScene - A platformer game with tilt controls for mobile devices
+ * 
+ * Tilt Controls Implementation:
+ * - Uses DeviceOrientationEvent API for mobile devices
+ * - Supports both gamma (left-right) and beta (front-back) tilt axes
+ * - Includes dead zone to prevent drift when device is held steady
+ * - Automatically handles iOS permission requests
+ * - Falls back to keyboard controls on desktop or when permission is denied
+ * - Includes device orientation change handling for screen rotation
+ * - Smooth input filtering and velocity damping for responsive controls
+ */
 export class CosmoClimbScene extends Container {
   private app: Application;
   private alien!: Sprite;
@@ -227,12 +239,29 @@ export class CosmoClimbScene extends Container {
     // Show tap to start overlay
     this.showStartOverlay();
 
-    // Show tilt permission prompt on mobile if needed
-    if (this.isMobileWithPermissionPrompt()) {
-      // No longer showing a separate prompt, but the overlay handles permission
+    // Set up device orientation handling based on device type
+    if (this.isMobileDevice()) {
+      if (this.hasDeviceOrientationSupport()) {
+        if (this.isMobileWithPermissionPrompt()) {
+          // iOS 13+ device that requires permission - handled in overlay
+          console.log('Mobile device detected with permission requirement');
+        } else {
+          // Mobile device without permission requirement (Android, older iOS)
+          console.log('Mobile device detected without permission requirement');
+          window.addEventListener('deviceorientation', this.handleTilt);
+          window.addEventListener('orientationchange', this.handleDeviceOrientationChange);
+          this.tiltPermissionGranted = true;
+        }
+      } else {
+        // Mobile device without device orientation support
+        console.log('Mobile device detected without device orientation support');
+      }
     } else {
-      window.addEventListener('deviceorientation', this.handleTilt);
+      // Desktop device - no device orientation needed
+      console.log('Desktop device detected');
     }
+    
+    // Always set up keyboard controls as fallback
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
     Ticker.shared.add(this.update, this);
@@ -310,10 +339,65 @@ export class CosmoClimbScene extends Container {
 
   private handleTilt = (event: DeviceOrientationEvent) => {
     if (this.usingKeyboard) return;
-    if (event.gamma !== null) {
-      this.tilt = event.gamma / 45; // Normalize to [-2, 2]
+    
+    // Get device orientation values
+    const gamma = event.gamma; // Left-right tilt
+    const beta = event.beta;   // Front-back tilt
+    const alpha = event.alpha; // Device rotation around z-axis
+    
+    // Check if we have valid orientation data
+    if (gamma === null || beta === null) return;
+    
+    // Determine the primary tilt axis based on device orientation
+    let tiltValue: number;
+    
+    // For most mobile games, gamma (left-right tilt) is the primary control
+    // But we can also use beta (front-back) as a fallback or alternative
+    if (Math.abs(gamma) > Math.abs(beta)) {
+      // Use gamma (left-right tilt) as primary control
+      tiltValue = gamma;
+    } else {
+      // Use beta (front-back tilt) as primary control
+      tiltValue = beta;
+    }
+    
+    // Apply dead zone to prevent drift when device is held steady
+    const deadZone = 5; // degrees
+    if (Math.abs(tiltValue) < deadZone) {
+      tiltValue = 0;
+    }
+    
+    // Normalize and scale the tilt value
+    // Gamma typically ranges from -90 to +90 degrees
+    // We want to map this to a reasonable control range
+    const maxTilt = 30; // degrees
+    const normalizedTilt = Math.max(-maxTilt, Math.min(maxTilt, tiltValue));
+    
+    // Convert to a control value between -1 and 1
+    this.tilt = normalizedTilt / maxTilt;
+    
+    // Apply additional smoothing to prevent jittery movement
+    this.tilt *= 0.8; // Reduce sensitivity slightly
+    
+    // Debug logging (can be removed in production)
+    if (Math.abs(this.tilt) > 0.1) {
+      console.log(`Tilt: gamma=${gamma?.toFixed(1)}, beta=${beta?.toFixed(1)}, normalized=${this.tilt.toFixed(3)}`);
     }
   };
+
+  private handleDeviceOrientationChange = (event: Event) => {
+    // This method handles device orientation changes (like screen rotation)
+    // We can use this to recalibrate tilt controls if needed
+    console.log('Device orientation changed - recalibrating tilt controls');
+    this.calibrateTiltControls();
+  };
+
+  private calibrateTiltControls() {
+    // Reset tilt values to center
+    this.tilt = 0;
+    this.velocityX = 0;
+    console.log('Tilt controls calibrated');
+  }
 
   private handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
@@ -337,12 +421,26 @@ export class CosmoClimbScene extends Container {
 
   private update = () => {
     if (this.isGameOver || !this.gameStarted) return;
+    
+    // Handle input switching - if keyboard is used, temporarily disable tilt
+    if (this.usingKeyboard) {
+      // Gradually reduce tilt influence when keyboard is used
+      this.tilt *= 0.9;
+    }
+    
     // Horizontal movement from tilt or keyboard
     const effectiveTilt = this.usingKeyboard ? this.keyboardTilt : this.tilt;
-    this.velocityX += effectiveTilt;
-    this.velocityX *= 0.95;
+    
+    // Apply tilt input with smoothing
+    this.velocityX += effectiveTilt * 0.3; // Reduced sensitivity for smoother control
+    this.velocityX *= 0.92; // Slightly more damping for smoother movement
+    
+    // Clamp velocity to prevent excessive speed
     this.velocityX = Math.max(-this.maxVelocityX, Math.min(this.maxVelocityX, this.velocityX));
+    
+    // Apply velocity to alien position
     this.alien.x += this.velocityX;
+    
     // Wrap alien horizontally
     if (this.alien.x < 0) this.alien.x = this.app.renderer.width;
     if (this.alien.x > this.app.renderer.width) this.alien.x = 0;
@@ -581,6 +679,7 @@ export class CosmoClimbScene extends Container {
 
   public destroy(options?: any) {
     window.removeEventListener('deviceorientation', this.handleTilt);
+    window.removeEventListener('orientationchange', this.handleDeviceOrientationChange);
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
     Ticker.shared.remove(this.update, this);
@@ -588,8 +687,24 @@ export class CosmoClimbScene extends Container {
   }
 
   private isMobileWithPermissionPrompt(): boolean {
-    return typeof DeviceOrientationEvent !== 'undefined' &&
-      typeof (DeviceOrientationEvent as any).requestPermission === 'function';
+    // Check if we're on a mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Check if device orientation API is available
+    const hasDeviceOrientation = typeof DeviceOrientationEvent !== 'undefined';
+    
+    // Check if permission is required (iOS 13+)
+    const requiresPermission = typeof (DeviceOrientationEvent as any).requestPermission === 'function';
+    
+    return isMobile && hasDeviceOrientation && requiresPermission;
+  }
+
+  private isMobileDevice(): boolean {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
+
+  private hasDeviceOrientationSupport(): boolean {
+    return typeof DeviceOrientationEvent !== 'undefined';
   }
   
   private showStartOverlay() {
@@ -600,7 +715,24 @@ export class CosmoClimbScene extends Container {
     g.drawRect(0, 0, this.app.renderer.width, this.app.renderer.height);
     g.endFill();
     this.startOverlay.addChild(g);
-    const t = new Text('Tap to Start', {
+    
+    // Create instruction text based on device type
+    let instructionText = 'Tap to Start';
+    if (this.isMobileDevice()) {
+      if (this.hasDeviceOrientationSupport()) {
+        if (this.isMobileWithPermissionPrompt()) {
+          instructionText = 'Tap to Start\n(Tilt to control)';
+        } else {
+          instructionText = 'Tap to Start\n(Tilt to control)';
+        }
+      } else {
+        instructionText = 'Tap to Start\n(Use keyboard: A/D or Arrow Keys)';
+      }
+    } else {
+      instructionText = 'Tap to Start\n(Use keyboard: A/D or Arrow Keys)';
+    }
+    
+    const t = new Text(instructionText, {
       fontFamily: 'Chewy', fontSize: 48, fill: 0xffffff, stroke: 0x000000, strokeThickness: 8, align: 'center'
     } as any);
     t.anchor.set(0.5);
@@ -612,23 +744,33 @@ export class CosmoClimbScene extends Container {
     this.startOverlay.hitArea = new Rectangle(0, 0, this.app.renderer.width, this.app.renderer.height);
     this.startOverlay.on('pointerdown', (_event: any) => {
       // Request permissions directly in the user gesture handler
-      if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+      if (this.isMobileWithPermissionPrompt()) {
         // iOS 13+ device that requires permission
+        console.log('Requesting device orientation permission...');
         (DeviceOrientationEvent as any).requestPermission().then((permissionState: string) => {
+          console.log(`Permission result: ${permissionState}`);
           if (permissionState === 'granted') {
             window.addEventListener('deviceorientation', this.handleTilt);
+            window.addEventListener('orientationchange', this.handleDeviceOrientationChange);
             this.tiltPermissionGranted = true;
+            console.log('Device orientation permission granted');
             this.startGame();
           } else {
+            console.log('Device orientation permission denied');
             this.showPermissionDeniedPopup(`Permission denied: ${permissionState}`);
           }
         }).catch((err: any) => {
+          console.error('Permission request error:', err);
           this.showPermissionDeniedPopup(`Permission error: ${err}`);
         });
       } else {
         // Non-iOS device or older iOS - no permission needed
-        window.addEventListener('deviceorientation', this.handleTilt);
-        this.tiltPermissionGranted = true;
+        if (this.isMobileDevice() && this.hasDeviceOrientationSupport()) {
+          window.addEventListener('deviceorientation', this.handleTilt);
+          window.addEventListener('orientationchange', this.handleDeviceOrientationChange);
+          this.tiltPermissionGranted = true;
+          console.log('Device orientation enabled without permission requirement');
+        }
         this.startGame();
       }
     });    
@@ -666,6 +808,20 @@ export class CosmoClimbScene extends Container {
   private startGame = () => {
     this.gameStarted = true;
     this.solarStorm.visible = true; // Show solar storm when game starts
+    
+    // Reset tilt controls for clean start
+    this.tilt = 0;
+    this.velocityX = 0;
+    this.usingKeyboard = false;
+    this.keyboardTilt = 0;
+    
+    // Log tilt status for debugging
+    if (this.tiltPermissionGranted) {
+      console.log('Game started with tilt controls enabled');
+    } else {
+      console.log('Game started with keyboard controls only');
+    }
+    
     if (this.startOverlay) {
       this.removeChild(this.startOverlay);
       this.startOverlay = undefined;
