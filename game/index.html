@@ -1,43 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <!-- Full-screen mobile support -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Space GameZZZ</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico"/>
+    <style>
+      :root {
+        /* iOS safe-area insets */
+        --inset-top: env(safe-area-inset-top);
+        --inset-right: env(safe-area-inset-right);
+        --inset-bottom: env(safe-area-inset-bottom);
+        --inset-left: env(safe-area-inset-left);
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+      #game-container {
+        position: fixed;
+        top: var(--inset-top, 0);
+        left: var(--inset-left, 0);
+        width: calc(100vw - var(--inset-left, 0) - var(--inset-right, 0));
+        height: calc(100vh - var(--inset-top, 0) - var(--inset-bottom, 0));
+        touch-action: none;
+      }
+      canvas {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
 
-  <title>Animal Finder</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chewy&display=swap"
+      rel="stylesheet"
+    />
 
-  <style>
-    /* reset & full-screen canvas */
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #000; /* or any background color */
-    }
-    #game-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      touch-action: none; /* for mobile/touch games */
-    }
-    canvas {
-      width: 100%;
-      height: 100%;
-    }
-  </style>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,600&display=swap" rel="stylesheet">
+    <link 
+      href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" 
+      rel="stylesheet"
+    />
 
-</head>
-<body>
-  <div id="game-container"></div>
-  <script type="module" src="/src/main.ts"></script>
-</body>
+  </head>
+  <body>
+    <div id="game-container"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>

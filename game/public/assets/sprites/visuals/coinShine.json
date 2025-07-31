@@ -1,0 +1,145 @@
+{
+	"frames": {
+		"star coin 1.png": {
+			"frame": {
+				"x": 1,
+				"y": 1,
+				"w": 2233,
+				"h": 2243
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 2233,
+				"h": 2243
+			},
+			"sourceSize": {
+				"w": 2233,
+				"h": 2243
+			}
+		},
+		"star coin 2.png": {
+			"frame": {
+				"x": 2236,
+				"y": 1,
+				"w": 2233,
+				"h": 2243
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 2233,
+				"h": 2243
+			},
+			"sourceSize": {
+				"w": 2233,
+				"h": 2243
+			}
+		},
+		"star coin 3.png": {
+			"frame": {
+				"x": 1,
+				"y": 2246,
+				"w": 2233,
+				"h": 2243
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 2233,
+				"h": 2243
+			},
+			"sourceSize": {
+				"w": 2233,
+				"h": 2243
+			}
+		},
+		"star coin 4.png": {
+			"frame": {
+				"x": 2236,
+				"y": 2246,
+				"w": 2233,
+				"h": 2243
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 2233,
+				"h": 2243
+			},
+			"sourceSize": {
+				"w": 2233,
+				"h": 2243
+			}
+		},
+		"star coin 5.png": {
+			"frame": {
+				"x": 4471,
+				"y": 1,
+				"w": 2233,
+				"h": 2243
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 2233,
+				"h": 2243
+			},
+			"sourceSize": {
+				"w": 2233,
+				"h": 2243
+			}
+		},
+		"star coin 6.png": {
+			"frame": {
+				"x": 4471,
+				"y": 2246,
+				"w": 2233,
+				"h": 2243
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 2233,
+				"h": 2243
+			},
+			"sourceSize": {
+				"w": 2233,
+				"h": 2243
+			}
+		}
+	},
+	"animations": {
+        "coins": [
+            "star coin 1.png",
+            "star coin 2.png",
+            "star coin 3.png",
+            "star coin 4.png",
+            "star coin 5.png",
+            "star coin 6.png"
+        ]
+    },
+	"meta": {
+		"app": "http://www.codeandweb.com/texturepacker",
+		"version": "1.0",
+		"image": "coinShine.png",
+		"format": "RGBA8888",
+		"size": {
+			"w": 6705,
+			"h": 4490
+		},
+		"scale": "1"
+	}
+}

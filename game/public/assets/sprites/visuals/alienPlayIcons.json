@@ -1,0 +1,195 @@
+{
+	"frames": {
+		"alien 1.png": {
+			"frame": {
+				"x": 1,
+				"y": 1,
+				"w": 438,
+				"h": 312
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 438,
+				"h": 312
+			},
+			"sourceSize": {
+				"w": 438,
+				"h": 312
+			}
+		},
+		"alien 2.png": {
+			"frame": {
+				"x": 441,
+				"y": 1,
+				"w": 403,
+				"h": 312
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 403,
+				"h": 312
+			},
+			"sourceSize": {
+				"w": 403,
+				"h": 312
+			}
+		},
+		"alien 3.png": {
+			"frame": {
+				"x": 846,
+				"y": 1,
+				"w": 385,
+				"h": 312
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 385,
+				"h": 312
+			},
+			"sourceSize": {
+				"w": 385,
+				"h": 312
+			}
+		},
+		"alien 4.png": {
+			"frame": {
+				"x": 1,
+				"y": 315,
+				"w": 479,
+				"h": 404
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 479,
+				"h": 404
+			},
+			"sourceSize": {
+				"w": 479,
+				"h": 404
+			}
+		},
+		"asteroid 1.png": {
+			"frame": {
+				"x": 482,
+				"y": 315,
+				"w": 577,
+				"h": 571
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 577,
+				"h": 571
+			},
+			"sourceSize": {
+				"w": 577,
+				"h": 571
+			}
+		},
+		"asteroid 2.png": {
+			"frame": {
+				"x": 1061,
+				"y": 315,
+				"w": 575,
+				"h": 578
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 575,
+				"h": 578
+			},
+			"sourceSize": {
+				"w": 575,
+				"h": 578
+			}
+		},
+		"asteroid 3.png": {
+			"frame": {
+				"x": 1,
+				"y": 895,
+				"w": 556,
+				"h": 584
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 556,
+				"h": 584
+			},
+			"sourceSize": {
+				"w": 556,
+				"h": 584
+			}
+		},
+		"explosion.png": {
+			"frame": {
+				"x": 559,
+				"y": 895,
+				"w": 630,
+				"h": 576
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 630,
+				"h": 576
+			},
+			"sourceSize": {
+				"w": 630,
+				"h": 576
+			}
+		},
+		"target.png": {
+			"frame": {
+				"x": 1638,
+				"y": 1,
+				"w": 910,
+				"h": 914
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 910,
+				"h": 914
+			},
+			"sourceSize": {
+				"w": 910,
+				"h": 914
+			}
+		}
+	},
+	"meta": {
+		"app": "http://www.codeandweb.com/texturepacker",
+		"version": "1.0",
+		"image": "alienPlayIcons.png",
+		"format": "RGBA8888",
+		"size": {
+			"w": 2549,
+			"h": 1480
+		},
+		"scale": "1"
+	}
+}
