@@ -1,5 +1,4 @@
 // Version 1.0.3
-import "./firebase"; 
 import { Application, Assets, Ticker } from 'pixi.js';
 
 async function bootstrap() {
