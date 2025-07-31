@@ -125,8 +125,44 @@ export class CosmoClimbScene extends Container {
   private setupTiltControls() {
     // Only enable tilt controls on mobile
     if (this.isMobileDevice()) {
-      window.addEventListener('deviceorientation', this.handleTilt);
-      console.log('Tilt controls enabled for mobile');
+      console.log('Mobile device detected, setting up tilt controls...');
+      
+      // Check if we need permission (iOS 13+)
+      if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+        console.log('iOS device detected, will request permission when game starts');
+      } else {
+        // Android or older iOS - no permission needed
+        window.addEventListener('deviceorientation', this.handleTilt);
+        console.log('Tilt controls enabled (no permission required)');
+      }
+    } else {
+      console.log('Desktop device detected, no tilt controls');
+    }
+  }
+
+  private async enableTiltControls() {
+    if (!this.isMobileDevice()) return;
+    
+    try {
+      // Check if we need permission (iOS 13+)
+      if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+        console.log('Requesting device orientation permission...');
+        const permissionState = await (DeviceOrientationEvent as any).requestPermission();
+        console.log(`Permission result: ${permissionState}`);
+        
+        if (permissionState === 'granted') {
+          window.addEventListener('deviceorientation', this.handleTilt);
+          console.log('Tilt controls enabled (permission granted)');
+        } else {
+          console.log('Tilt controls disabled (permission denied)');
+        }
+      } else {
+        // Android or older iOS - no permission needed
+        window.addEventListener('deviceorientation', this.handleTilt);
+        console.log('Tilt controls enabled (no permission required)');
+      }
+    } catch (error) {
+      console.error('Failed to enable tilt controls:', error);
     }
   }
 
@@ -134,17 +170,22 @@ export class CosmoClimbScene extends Container {
     const gamma = event.gamma;
     if (gamma === null) return;
     
+    // Debug logging
+    console.log(`Tilt event: gamma=${gamma?.toFixed(1)}`);
+    
     // Dead zone to prevent drift
-    const deadZone = 3;
+    const deadZone = 2;
     if (Math.abs(gamma) < deadZone) {
       this.tilt = 0;
       return;
     }
     
     // Simple tilt mapping
-    const maxTilt = 25;
+    const maxTilt = 20;
     const normalizedTilt = Math.max(-maxTilt, Math.min(maxTilt, gamma));
-    this.tilt = (normalizedTilt / maxTilt) * 0.6;
+    this.tilt = (normalizedTilt / maxTilt) * 0.8;
+    
+    console.log(`Tilt value: ${this.tilt.toFixed(3)}`);
   };
 
   private update = () => {
@@ -250,6 +291,11 @@ export class CosmoClimbScene extends Container {
 
   public destroy(options?: any) {
     window.removeEventListener('deviceorientation', this.handleTilt);
+    if (this.app.view) {
+      this.app.view.removeEventListener('touchstart', () => {});
+      this.app.view.removeEventListener('touchmove', () => {});
+      this.app.view.removeEventListener('touchend', () => {});
+    }
     Ticker.shared.remove(this.update, this);
     super.destroy(options);
   }
@@ -267,8 +313,8 @@ export class CosmoClimbScene extends Container {
     g.endFill();
     this.startOverlay.addChild(g);
     
-    const t = new Text('Tilt to Move\nTap to Start', {
-      fontFamily: 'Chewy', fontSize: 48, fill: 0xffffff, stroke: 0x000000, strokeThickness: 8, align: 'center'
+    const t = new Text('Tilt to Move\nTap to Start\n\nTouch left/right to move', {
+      fontFamily: 'Chewy', fontSize: 36, fill: 0xffffff, stroke: 0x000000, strokeThickness: 8, align: 'center'
     } as any);
     t.anchor.set(0.5);
     t.x = this.app.renderer.width / 2;
@@ -282,12 +328,52 @@ export class CosmoClimbScene extends Container {
     this.addChild(this.startOverlay);
   }
 
-  private startGame = () => {
+  private setupTouchControls() {
+    if (!this.isMobileDevice()) return;
+    
+    let touchStartX = 0;
+    let isTouching = false;
+    
+    this.app.view.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      touchStartX = e.touches[0].clientX;
+      isTouching = true;
+    });
+    
+    this.app.view.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (!isTouching) return;
+      
+      const touchX = e.touches[0].clientX;
+      const deltaX = touchX - touchStartX;
+      const screenWidth = this.app.renderer.width;
+      
+      // Map touch movement to tilt
+      this.tilt = (deltaX / screenWidth) * 2;
+      this.tilt = Math.max(-1, Math.min(1, this.tilt));
+    });
+    
+    this.app.view.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      isTouching = false;
+      this.tilt = 0;
+    });
+    
+    console.log('Touch controls enabled as fallback');
+  }
+
+  private startGame = async () => {
     this.gameStarted = true;
     
     // Reset controls
     this.tilt = 0;
     this.velocityX = 0;
+    
+    // Enable tilt controls
+    await this.enableTiltControls();
+    
+    // Enable touch controls as fallback
+    this.setupTouchControls();
     
     if (this.startOverlay) {
       this.removeChild(this.startOverlay);
